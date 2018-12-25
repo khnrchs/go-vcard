@@ -168,11 +168,10 @@ func (c Card) SetValue(k, v string) {
 
 // PreferredValue returns the preferred field value of the card.
 func (c Card) PreferredValue(k string) string {
-	f := c.Preferred(k)
-	if f == nil {
-		return ""
+	if f := c.Preferred(k); f != nil {
+		return f.Value
 	}
-	return f.Value
+	return ""
 }
 
 // Values returns a list of values for a given property.
@@ -216,26 +215,23 @@ func (c Card) FormattedNames() []*Field {
 
 // Names returns names of the card.
 func (c Card) Names() []*Name {
-	ns := c[FieldName]
-	if ns == nil {
-		return nil
+	if ns, ok := c[FieldName]; ok {
+		names := make([]*Name, len(ns))
+		for i, n := range ns {
+			names[i] = newName(n)
+		}
+		return names
 	}
-
-	names := make([]*Name, len(ns))
-	for i, n := range ns {
-		names[i] = newName(n)
-	}
-	return names
+	return nil
 }
 
 // Name returns the preferred name of the card. If it isn't specified, it
 // returns nil.
 func (c Card) Name() *Name {
-	n := c.Preferred(FieldName)
-	if n == nil {
-		return nil
+	if n := c.Preferred(FieldName); n != nil {
+		return newName(n)
 	}
-	return newName(n)
+	return nil
 }
 
 // AddName adds the specified name to the list of names.
@@ -312,7 +308,7 @@ func (c Card) SetRevision(t time.Time) {
 	c.SetValue(FieldRevision, t.Format(timestampLayout))
 }
 
-// A field contains a value and some parameters.
+// Field contains a value and some parameters.
 type Field struct {
 	Value  string
 	Params Params
@@ -325,11 +321,10 @@ type Params map[string][]string
 // Get returns the first value with the key k. It returns an empty string if
 // there is no such value.
 func (p Params) Get(k string) string {
-	values := p[k]
-	if len(values) == 0 {
-		return ""
+	if values, ok := p[k]; ok && len(values) != 0 {
+		return values[0]
 	}
-	return values[0]
+	return ""
 }
 
 // Add adds the k, v pair to the list of parameters. It appends to any existing
